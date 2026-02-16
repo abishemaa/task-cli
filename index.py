@@ -1,25 +1,116 @@
+import json
+import os
+import sys
 
+TASKS_FILE = "tasks.json"
+
+def load_tasks():
+    """Load tasks from the JSON file, creating it if it doesn't exist"""
+    if not os.path.exists(TASKS_FILE):
+        with open(TASKS_FILE, "w") as f:
+            json.dump([], f)
+        return []
+    with open(TASKS_FILE, "r") as f:
+        return json.load(f)
+
+def save_tasks(data):
+    """Save tasks to the JSON file"""
+    with open(TASKS_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 def main():
-    print("Task-cli is running...")
-    cli_input = input("Enter a command: ")
-    cli_handle_input(cli_input)
+    """Main entry point - processes command-line arguments"""
+    if len(sys.argv) < 2:
+        print("task-cli - Command line Task Manager\nUsage: python index.py <command> [options]")
+        sys.exit(1)
+    
+    command = sys.argv[1]
+    args = sys.argv[2:]
+    
+    cli_handle_command(command, args)
 
-def cli_handle_input(cli_input):
-    value = cli_input.split()[0]
+def cli_handle_command(command, args):
+    """Route command to appropriate handler"""
     case = {
-        "help": cli_help,
-        "exit": cli_exit,
-        "add": cli_add,
-        "list": cli_list,
-        "remove": cli_remove,
-    }
+        "help": help,
+        "exit": exit,
+        "add": add,
+        "list": list,
+        "update": update,
+        "mark": mark,
+        "mark-done": mark_done,
+        "mark-in-progress": mark_in_progress,
+        "mark-not-done": mark_not_done,
+        "remove": remove
+        }
+    handler = case.get(command, cli_invalid_command)
+    handler(args)
 
-    func = case.get(value, cli_invalid_command)
-    func(cli_input.split()[1:])  # Pass the arguments to the function
+def help(args):
+    """Display help information"""
+    print("""task-cli - Command line Task Manager""")
+    print("\nUsage: python index.py <command> [options]")
+    print("\nCommands:")
+    print("  help                 Show this help message")
+    print("  add <task>                        Add a new task")
+    print("  list [filter]                     List tasks (filter: all, done, not-done, in-progress)")
+    print("  update <task_id> <description>   Update task description")
+    print("  mark <task_id> <status>          Mark task with status")
+    print("  done <task_id>                    Mark task as done")
+    print("  in-progress <task_id>            Mark task as in progress")
+    print("  not-done <task_id>               Mark task as not done")
+    print("  remove <task_id>                 Remove a task")
+    print("  exit                              Exit the application")
+
+def exit(args):
+    """Exit the application"""
+    pass
 
 
+def add(args):
+    """Add a new task"""
+    pass
 
 
+def list(args):
+    """List tasks, optionally filtered by status"""
+    pass
 
-if __name__ == "__main__":    main()
+
+def update(args):
+    """Update a task's description"""
+    pass
+
+
+def mark(args):
+    """Mark a task with a specific status"""
+    pass
+
+
+def mark_done(args):
+    """Shorthand for marking task as done"""
+    pass
+
+
+def mark_in_progress(args):
+    """Shorthand for marking task as in-progress"""
+    pass
+
+
+def mark_not_done(args):
+    """Shorthand for marking task as not-done"""
+    pass
+
+
+def remove(args):
+    """Remove a task by ID"""
+    pass
+
+
+def cli_invalid_command(args):
+    """Handle invalid commands"""
+    pass
+
+
+if __name__ == "__main__":
+    main()
