@@ -64,17 +64,27 @@ def help(args):
 
 def exit(args):
     """Exit the application"""
-    pass
+    sys.exit(0)
 
 
 def add(args):
     """Add a new task"""
-    pass
-
+    if not args:
+        print("Error: No task description provided. \nUsage: add <task>")
+        return
+    tasks = load_tasks()
+    new_task = {
+        "id": max(t["id"] for t in tasks)+1,
+        "task": " ".join(args), 
+        "status": "not-done"
+    }
+    tasks.append(new_task)
+    save_tasks(tasks)
+    print(f"Task added: {new_task['task']}")
 
 def list(args):
     """List tasks, optionally filtered by status"""
-    pass
+    pass 
 
 
 def update(args):
