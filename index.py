@@ -103,10 +103,26 @@ def list(args):
         print(f"ID: {tid}, Task: {desc}, Status: {status}")
 
 
-
 def update(args):
     """Update a task's description"""
-    pass
+    if len(args) < 2:
+        print("Error: Insufficient arguments. \nUsage: update <task_id> <description>")
+        return
+    try:
+        task_id = int(args[0])
+    except ValueError:
+        print("Error: Task ID must be an integer.")
+        return
+
+    new_desc = " ".join(args[1:])
+    tasks = load_tasks()
+    for task in tasks:
+        if task.get("id") == task_id:
+            task["task"] = new_desc
+            save_tasks(tasks)
+            print(f"Task ID {task_id} updated.")
+            return
+    print(f"Error: Task with ID {task_id} not found.")
 
 
 def mark(args):
