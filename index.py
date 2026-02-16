@@ -84,7 +84,18 @@ def add(args):
 
 def list(args):
     """List tasks, optionally filtered by status"""
-    pass 
+    tasks = load_tasks()
+    filter_status = args[0] if args else "all"
+    if filter_status not in ["all", "done", "not-done", "in-progress"]:
+        print("Error: Invalid filter. Use 'all', 'done', 'not-done', or 'in-progress'.")
+        sys.exit(1)
+    filtered_tasks = [t for t in tasks if filter_status == "all" or t["status"] == filter_status]
+    if not filtered_tasks:
+        print("No tasks found.")
+        sys.exit(0)
+    for task in filtered_tasks:
+        print(f"ID: {task['id']}, Task: {task['task']}, Status: {task['status']}")
+
 
 
 def update(args):
