@@ -74,8 +74,8 @@ def add(args):
         return
     tasks = load_tasks()
     new_task = {
-        "id": max((t["id"] for t in tasks), default=0) + 1,
-        "task": " ".join(args), 
+        "id": max((t.get("id", 0) for t in tasks), default=0) + 1,
+        "task": " ".join(args),
         "status": "not-done"
     }
     tasks.append(new_task)
@@ -85,16 +85,22 @@ def add(args):
 def list(args):
     """List tasks, optionally filtered by status"""
     tasks = load_tasks()
-    filter_status = args[0] if args else "all"
-    if filter_status not in ["all", "done", "not-done", "in-progress"]:
+    filter_status = args[0].lower() if args else "all"
+    valid = {"all", "done", "not-done", "in-progress"}
+    if filter_status not in valid:
         print("Error: Invalid filter. Use 'all', 'done', 'not-done', or 'in-progress'.")
-        sys.exit(1)
-    filtered_tasks = [t for t in tasks if filter_status == "all" or t["status"] == filter_status]
+        return
+
+    filtered_tasks = [t for t in tasks if filter_status == "all" or t.get("status") == filter_status]
     if not filtered_tasks:
         print("No tasks found.")
-        sys.exit(0)
-    for task in filtered_tasks:
-        print(f"ID: {task['id']}, Task: {task['task']}, Status: {task['status']}")
+        return
+
+    for task in sorted(filtered_tasks, key=lambda x: x.get("id", 0)):
+        tid = task.get("id")
+        desc = task.get("task") or task.get("description")
+        status = task.get("status", "not-done")
+        print(f"ID: {tid}, Task: {desc}, Status: {status}")
 
 
 
