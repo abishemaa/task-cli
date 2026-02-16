@@ -127,22 +127,53 @@ def update(args):
 
 def mark(args):
     """Mark a task with a specific status"""
-    pass
+    if len(args) < 2:
+        print("Error: Insufficient arguments. \nUsage: mark <task_id> <status>")
+        return
+    try:
+        task_id = int(args[0])
+    except ValueError:
+        print("Error: Task ID must be an integer.")
+        return
 
+    status = args[1].lower()
+    valid_statuses = {"done", "not-done", "in-progress"}
+    if status not in valid_statuses:
+        print(f"Error: Invalid status '{status}'. Valid: done, in-progress, not-done")
+        return
+
+    tasks = load_tasks()
+    for task in tasks:
+        if task.get("id") == task_id:
+            old = task.get("status") if "status" in task else "unspecified"
+            task["status"] = status
+            save_tasks(tasks)
+            print(f"Task {task_id} marked as {status} (was: {old})")
+            return
+    print(f"Error: Task with ID {task_id} not found.")
 
 def mark_done(args):
     """Shorthand for marking task as done"""
-    pass
+    if not args:
+        print("Usage: done <task_id>")
+        return
+    mark([args[0], "done"])
 
 
 def mark_in_progress(args):
     """Shorthand for marking task as in-progress"""
-    pass
+    if not args:
+        print("Usage: in-progress <task_id>")
+        return
+    mark([args[0], "in-progress"])
 
 
 def mark_not_done(args):
     """Shorthand for marking task as not-done"""
-    pass
+    if not args:
+        print("Usage: not-done <task_id>")
+        return
+    mark([args[0], "not-done"])
 
 
 def remove(args):
@@ -152,7 +183,7 @@ def remove(args):
 
 def cli_invalid_command(args):
     """Handle invalid commands"""
-    pass
+    print("Error: Invalid command. Type 'help' for available commands.")
 
 
 if __name__ == "__main__":
