@@ -74,7 +74,7 @@ def add(args):
         return
     tasks = load_tasks()
     new_task = {
-        "id": max(t["id"] for t in tasks)+1,
+        "id": max((t["id"] for t in tasks), default=0) + 1,
         "task": " ".join(args), 
         "status": "not-done"
     }
