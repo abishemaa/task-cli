@@ -15,11 +15,6 @@
         "status": "not-done"
     },
     {
-        "id": 4,
-        "task": "fix bug",
-        "status": "not-done"
-    },
-    {
         "id": 5,
         "task": "unique-task-for-test-123",
         "status": "not-done"
