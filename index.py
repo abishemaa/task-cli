@@ -178,7 +178,23 @@ def mark_not_done(args):
 
 def remove(args):
     """Remove a task by ID"""
-    pass
+    if not args:
+        print("Error: No task ID provided. \nUsage: remove <task_id>")
+        return
+    try:
+        task_id = int(args[0])
+    except ValueError:
+        print("Error: Task ID must be an integer.")
+        return
+
+    tasks = load_tasks()
+    for i, task in enumerate(tasks):
+        if task.get("id") == task_id:
+            removed = tasks.pop(i)
+            save_tasks(tasks)
+            print(f"Task ID {task_id} removed: {removed.get('task')}")
+            return
+    print(f"Error: Task with ID {task_id} not found.")
 
 
 def cli_invalid_command(args):
