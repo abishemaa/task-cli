@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from datetime import datetime
 
 TASKS_FILE = "tasks.json"
 
@@ -41,7 +42,8 @@ def cli_handle_command(command, args):
         "mark-done": mark_done,
         "mark-in-progress": mark_in_progress,
         "mark-not-done": mark_not_done,
-        "remove": remove
+        "remove": remove,
+        "delete": remove
         }
     handler = case.get(command, cli_invalid_command)
     handler(args)
@@ -53,13 +55,14 @@ def help(args):
     print("\nCommands:")
     print("  help                 Show this help message")
     print("  add <task>                        Add a new task")
-    print("  list [filter]                     List tasks (filter: all, done, not-done, in-progress)")
+    print("  list [filter]                     List tasks (filter: all, done, todo, not-done, in-progress)")
     print("  update <task_id> <description>   Update task description")
     print("  mark <task_id> <status>          Mark task with status")
     print("  done <task_id>                    Mark task as done")
     print("  in-progress <task_id>            Mark task as in progress")
     print("  not-done <task_id>               Mark task as not done")
     print("  remove <task_id>                 Remove a task")
+    print("  delete <task_id>                 Delete a task (alias for remove)")
     print("  exit                              Exit the application")
 
 def exit(args):
@@ -73,34 +76,53 @@ def add(args):
         print("Error: No task description provided. \nUsage: add <task>")
         return
     tasks = load_tasks()
+    now = datetime.utcnow().isoformat() + "Z"
     new_task = {
         "id": max((t.get("id", 0) for t in tasks), default=0) + 1,
-        "task": " ".join(args),
-        "status": "not-done"
+        "description": " ".join(args),
+        "status": "todo",
+        "createdAt": now,
+        "updatedAt": now
     }
     tasks.append(new_task)
     save_tasks(tasks)
-    print(f"Task added: {new_task['task']}")
+    print(f"Task added successfully (ID: {new_task['id']})")
 
 def list(args):
     """List tasks, optionally filtered by status"""
     tasks = load_tasks()
     filter_status = args[0].lower() if args else "all"
-    valid = {"all", "done", "not-done", "in-progress"}
-    if filter_status not in valid:
-        print("Error: Invalid filter. Use 'all', 'done', 'not-done', or 'in-progress'.")
-        return
 
-    filtered_tasks = [t for t in tasks if filter_status == "all" or t.get("status") == filter_status]
+    def normalize_status(s):
+        if not s:
+            return "todo"
+        s = s.lower()
+        if s in ("not-done", "not_done", "notdone", "todo"):
+            return "todo"
+        if s in ("in-progress", "in_progress", "inprogress"):
+            return "in-progress"
+        if s == "done":
+            return "done"
+        return s
+
+    fs = normalize_status(filter_status) if filter_status != "all" else "all"
+
+    filtered_tasks = []
+    for t in tasks:
+        stored = t.get("status", "todo")
+        if fs == "all" or normalize_status(stored) == fs:
+            filtered_tasks.append(t)
     if not filtered_tasks:
         print("No tasks found.")
         return
 
     for task in sorted(filtered_tasks, key=lambda x: x.get("id", 0)):
         tid = task.get("id")
-        desc = task.get("task") or task.get("description")
-        status = task.get("status", "not-done")
-        print(f"ID: {tid}, Task: {desc}, Status: {status}")
+        desc = task.get("description") or task.get("task")
+        status = task.get("status", "todo")
+        created = task.get("createdAt", "-")
+        updated = task.get("updatedAt", "-")
+        print(f"ID: {tid}, Description: {desc}, Status: {status}, createdAt: {created}, updatedAt: {updated}")
 
 
 def update(args):
@@ -115,10 +137,14 @@ def update(args):
         return
 
     new_desc = " ".join(args[1:])
+    now = datetime.utcnow().isoformat() + "Z"
     tasks = load_tasks()
     for task in tasks:
         if task.get("id") == task_id:
-            task["task"] = new_desc
+            task["description"] = new_desc
+            if "task" in task:
+                task.pop("task", None)
+            task["updatedAt"] = now
             save_tasks(tasks)
             print(f"Task ID {task_id} updated.")
             return
@@ -135,18 +161,28 @@ def mark(args):
     except ValueError:
         print("Error: Task ID must be an integer.")
         return
+    raw_status = args[1].lower()
 
-    status = args[1].lower()
-    valid_statuses = {"done", "not-done", "in-progress"}
-    if status not in valid_statuses:
-        print(f"Error: Invalid status '{status}'. Valid: done, in-progress, not-done")
-        return
+    def normalize_target(s):
+        if s in ("not-done", "not_done", "notdone"):
+            return "todo"
+        if s in ("todo",):
+            return "todo"
+        if s in ("in-progress", "in_progress", "inprogress"):
+            return "in-progress"
+        if s == "done":
+            return "done"
+        return s
+
+    status = normalize_target(raw_status)
 
     tasks = load_tasks()
+    now = datetime.utcnow().isoformat() + "Z"
     for task in tasks:
         if task.get("id") == task_id:
             old = task.get("status") if "status" in task else "unspecified"
             task["status"] = status
+            task["updatedAt"] = now
             save_tasks(tasks)
             print(f"Task {task_id} marked as {status} (was: {old})")
             return
@@ -173,7 +209,7 @@ def mark_not_done(args):
     if not args:
         print("Usage: not-done <task_id>")
         return
-    mark([args[0], "not-done"])
+    mark([args[0], "todo"])
 
 
 def remove(args):
@@ -186,13 +222,13 @@ def remove(args):
     except ValueError:
         print("Error: Task ID must be an integer.")
         return
-
     tasks = load_tasks()
     for i, task in enumerate(tasks):
         if task.get("id") == task_id:
             removed = tasks.pop(i)
             save_tasks(tasks)
-            print(f"Task ID {task_id} removed: {removed.get('task')}")
+            desc = removed.get("description") or removed.get("task")
+            print(f"Task ID {task_id} removed: {desc}")
             return
     print(f"Error: Task with ID {task_id} not found.")
 
