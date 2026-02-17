@@ -4,17 +4,17 @@ Simple command-line task tracker.
 
 Usage
 
-Run commands with Python:
+Run commands with Python from the project folder. Examples:
 
+```bash
 python index.py add "Buy groceries"
 python index.py list
-python index.py list done
 python index.py list todo
 python index.py update 1 "Buy groceries and cook dinner"
-python index.py mark 1 done
-python index.py mark 1 in-progress
-python index.py remove 1
-python index.py delete 1  # alias for remove
+python index.py mark-done 1
+python index.py mark-in-progress 2
+python index.py delete 1
+```
 
 Task object fields stored in tasks.json:
 - id: integer unique id
@@ -24,6 +24,7 @@ Task object fields stored in tasks.json:
 - updatedAt: ISO 8601 UTC timestamp
 
 Notes
-- The CLI uses positional arguments.
+- The CLI uses simple positional arguments (no flags).
 - The JSON file `tasks.json` is created automatically if missing.
-- The application accepts legacy `not-done` status values and `task` field names for compatibility.
+- Fields: `id`, `description`, `status`, `createdAt`, `updatedAt`.
+- Status values: `todo`, `in-progress`, `done`.
