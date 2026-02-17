@@ -17,18 +17,44 @@ def load_tasks():
         with open(TASKS_FILE, "w") as f:
             json.dump([], f)
         return []
-    with open(TASKS_FILE, "r") as f:
-        try:
-            return json.load(f)
-        except Exception:
-            # invalid JSON or read error
-            return []
+    try:
+        with open(TASKS_FILE, "r") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        print("Warning: tasks.json contains invalid JSON. Starting with empty list.")
+        return []
+    except OSError as e:
+        print(f"Error reading {TASKS_FILE}: {e}")
+        return []
+
+    # ensure we have a list of tasks
+    if not isinstance(data, list):
+        print(f"Warning: {TASKS_FILE} has unexpected format. Expected a list; got {type(data).__name__}.")
+        return []
+    return data
 
 
 def save_tasks(tasks):
-    """Write the task list to TASKS_FILE."""
-    with open(TASKS_FILE, "w") as f:
-        json.dump(tasks, f, indent=2)
+    """Write the task list to TASKS_FILE using an atomic replace.
+
+    This writes to a temporary file and then replaces the original file.
+    If writing fails, an error message is printed and an exception is raised.
+    """
+    tmp = TASKS_FILE + ".tmp"
+    try:
+        with open(tmp, "w") as f:
+            json.dump(tasks, f, indent=2)
+        # os.replace is atomic on most platforms
+        os.replace(tmp, TASKS_FILE)
+    except Exception as e:
+        # try to clean up temp file if it exists
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        print(f"Error saving tasks: {e}")
+        raise
 
 
 def next_id(tasks):
@@ -56,7 +82,11 @@ def cmd_add(args):
         "updatedAt": now,
     }
     tasks.append(task)
-    save_tasks(tasks)
+    try:
+        save_tasks(tasks)
+    except Exception:
+        print("Failed to save task. Check file permissions and available disk space.")
+        return
     print("Task added (ID: {})".format(task["id"]))
 
 
@@ -104,7 +134,11 @@ def cmd_update(args):
         if t.get("id") == tid:
             t["description"] = new_desc
             t["updatedAt"] = datetime.now().isoformat()
-            save_tasks(tasks)
+            try:
+                save_tasks(tasks)
+            except Exception:
+                print("Failed to save updated task.")
+                return
             print("Task {} updated".format(tid))
             return
     print("Task not found")
@@ -129,7 +163,11 @@ def cmd_delete(args):
     if len(new) == len(tasks):
         print("Task not found")
         return
-    save_tasks(new)
+    try:
+        save_tasks(new)
+    except Exception:
+        print("Failed to delete task (could not write file).")
+        return
     print("Task {} deleted".format(tid))
 
 
@@ -147,7 +185,11 @@ def cmd_mark_done(args):
         if t.get("id") == tid:
             t["status"] = "done"
             t["updatedAt"] = datetime.now().isoformat()
-            save_tasks(tasks)
+            try:
+                save_tasks(tasks)
+            except Exception:
+                print("Failed to save task status change.")
+                return
             print("Task {} marked done".format(tid))
             return
     print("Task not found")
@@ -167,7 +209,11 @@ def cmd_mark_progress(args):
         if t.get("id") == tid:
             t["status"] = "in-progress"
             t["updatedAt"] = datetime.now().isoformat()
-            save_tasks(tasks)
+            try:
+                save_tasks(tasks)
+            except Exception:
+                print("Failed to save task status change.")
+                return
             print("Task {} marked in-progress".format(tid))
             return
     print("Task not found")
@@ -190,20 +236,25 @@ def main():
         return
     cmd = sys.argv[1]
     args = sys.argv[2:]
-    if cmd == "add":
-        cmd_add(args)
-    elif cmd == "list":
-        cmd_list(args)
-    elif cmd == "update":
-        cmd_update(args)
-    elif cmd in ("delete", "remove"):
-        cmd_delete(args)
-    elif cmd == "mark-done":
-        cmd_mark_done(args)
-    elif cmd == "mark-in-progress":
-        cmd_mark_progress(args)
-    else:
-        print_help()
+    try:
+        if cmd == "add":
+            cmd_add(args)
+        elif cmd == "list":
+            cmd_list(args)
+        elif cmd == "update":
+            cmd_update(args)
+        elif cmd in ("delete", "remove"):
+            cmd_delete(args)
+        elif cmd == "mark-done":
+            cmd_mark_done(args)
+        elif cmd == "mark-in-progress":
+            cmd_mark_progress(args)
+        else:
+            print_help()
+    except Exception as e:
+        # Catch any unexpected error and show a friendly message instead of a traceback
+        print(f"Unexpected error: {e}")
+        print("If the problem persists, check file permissions or file contents of tasks.json")
 
 
 if __name__ == "__main__":
