@@ -5,7 +5,29 @@ Simple command-line task tracker.
 **Repository:** https://github.com/abishemaa/task-cli
 **Project:** https://roadmap.sh/projects/task-tracker
 
-Usage
+## ✨ Features
+
+- **Add Tasks** → Create new tasks with descriptions
+- **List Tasks** → View all tasks or filter by status (todo, in-progress, done)
+- **Update Tasks** → Modify task descriptions
+- **Mark as In-Progress** → Change task status to in-progress
+- **Mark as Done** → Mark tasks as completed
+- **Delete Tasks** → Remove tasks by ID
+- **Auto-save** → All changes saved to tasks.json
+
+## ⚡ Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/abishemaa/task-cli.git
+   cd task-cli
+   ```
+
+2. Ensure you have Python 3.x installed
+
+3. Run the CLI directly with Python
+
+## Usage
 
 Run commands with Python from the project folder. Examples:
 
