@@ -2,6 +2,8 @@
 
 Simple command-line task tracker.
 
+**Repository:** https://github.com/abishemaa/task-cli
+
 Usage
 
 Run commands with Python from the project folder. Examples:
